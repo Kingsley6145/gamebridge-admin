@@ -1,0 +1,70 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() { return request.auth != null; }
+
+    // Community posts media
+    match /posts/{file=**} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Generated thumbnails for videos
+    match /thumbnails/{file=**} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // User avatars
+    match /avatars/{file=**} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // User avatars for igaming news app
+    match /user_avatars/{userId}/{file=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Group images namespaced by uploader's uid
+    match /groups/covers/{userId}/{file=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /groups/profiles/{userId}/{file=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Content images for news editor
+    match /content/images/{file=**} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Content videos for news editor
+    match /content/videos/{file=**} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Gamebridge admin panel files (images and videos)
+    match /Gamebridge_images/{file=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /Gamebridge_videos/{file=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

@@ -1,0 +1,151 @@
+import { useState, useEffect } from 'react';
+import { Input } from '../common/Input';
+import { ColorPicker } from '../common/ColorPicker';
+import { FileUpload } from '../common/FileUpload';
+import { MarkdownEditor } from '../common/MarkdownEditor';
+import { Button } from '../common/Button';
+import { validateModule } from '../../utils/validation';
+import { iconColors } from '../../utils/colors';
+import { generateId } from '../../utils/formatters';
+
+export const ModuleForm = ({ module, onSubmit, onCancel, loading = false }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    duration: '',
+    iconColor: '',
+    videoUrl: '',
+    markdownDescription: '',
+  });
+  const [errors, setErrors] = useState({});
+  const [videoFile, setVideoFile] = useState(null);
+
+  useEffect(() => {
+    if (module) {
+      setFormData({
+        title: module.title || '',
+        duration: module.duration || '',
+        iconColor: module.iconColor || '',
+        videoUrl: module.videoUrl || '',
+        markdownDescription: module.markdownDescription || '',
+      });
+      setVideoFile(null); // Reset video file when editing existing module
+    } else {
+      // Reset form when adding new module
+      setFormData({
+        title: '',
+        duration: '',
+        iconColor: '',
+        videoUrl: '',
+        markdownDescription: '',
+      });
+      setVideoFile(null);
+    }
+  }, [module]);
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const handleVideoSelect = (file) => {
+    setVideoFile(file);
+    // If file is cleared (user clicked remove), clear the videoUrl
+    if (!file) {
+      handleChange('videoUrl', '');
+    } else {
+      // Clear videoUrl error when a new file is selected
+      if (errors.videoUrl) {
+        setErrors(prev => ({ ...prev, videoUrl: null }));
+      }
+    }
+    // Don't update videoUrl when a new file is selected - it will be set after upload in handleModuleSubmit
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent form
+    
+    // Check if videoFile exists (new upload) or videoUrl exists (existing video)
+    const hasVideo = videoFile || formData.videoUrl;
+    
+    const validationErrors = validateModule(formData);
+    
+    // Override videoUrl error if a video file is selected
+    if (hasVideo && validationErrors.videoUrl) {
+      delete validationErrors.videoUrl;
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    const moduleData = {
+      ...formData,
+      id: module?.id || generateId(),
+    };
+
+    onSubmit(moduleData, videoFile);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()} className="space-y-6">
+      <Input
+        label="Title"
+        value={formData.title}
+        onChange={(e) => handleChange('title', e.target.value)}
+        placeholder="e.g., Introduction to UI/UX"
+        error={errors.title}
+        required
+      />
+
+      <Input
+        label="Duration"
+        value={formData.duration}
+        onChange={(e) => handleChange('duration', e.target.value)}
+        placeholder="e.g., 4:28 mins"
+        error={errors.duration}
+        required
+      />
+
+      <ColorPicker
+        label="Icon Color"
+        value={formData.iconColor}
+        onChange={(value) => handleChange('iconColor', value)}
+        colors={iconColors}
+        error={errors.iconColor}
+        required
+      />
+
+      <FileUpload
+        type="video"
+        label="Video File"
+        onFileSelect={handleVideoSelect}
+        currentFile={formData.videoUrl}
+        error={errors.videoUrl}
+        required
+      />
+
+      <MarkdownEditor
+        label="Description"
+        value={formData.markdownDescription}
+        onChange={(value) => handleChange('markdownDescription', value)}
+        placeholder="Write the module description in markdown..."
+        error={errors.markdownDescription}
+        required
+      />
+
+      <div className="flex items-center justify-end gap-4 pt-4 border-t border-light-border dark:border-dark-border">
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" loading={loading}>
+          {module ? 'Update Module' : 'Add Module'}
+        </Button>
+      </div>
+    </form>
+  );
+};
+

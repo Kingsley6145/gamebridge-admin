@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-light-bg dark:bg-dark-bg;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9a1a3d;
+}
+
+/* Markdown styles */
+.markdown-content {
+  @apply text-light-text dark:text-dark-text;
+}
+
+.markdown-content h1 {
+  @apply text-3xl font-bold mb-4 mt-6 text-light-text dark:text-dark-text;
+}
+
+.markdown-content h2 {
+  @apply text-2xl font-bold mb-3 mt-5 text-light-text dark:text-dark-text;
+}
+
+.markdown-content h3 {
+  @apply text-xl font-semibold mb-2 mt-4 text-light-text dark:text-dark-text;
+}
+
+.markdown-content p {
+  @apply mb-4 leading-relaxed text-light-text dark:text-dark-text;
+}
+
+.markdown-content li {
+  @apply text-light-text dark:text-dark-text;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  @apply mb-4 ml-6;
+  list-style: none;
+  padding-left: 0;
+}
+
+.markdown-content ul li {
+  @apply mb-2 pl-6 relative;
+  position: relative;
+}
+
+.markdown-content ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #BA1E4D;
+}
+
+.markdown-content ol {
+  counter-reset: list-counter;
+  padding-left: 1.5rem;
+}
+
+.markdown-content ol li {
+  @apply mb-2;
+  counter-increment: list-counter;
+  position: relative;
+  padding-left: 0.5rem;
+}
+
+.markdown-content ol li::before {
+  content: counter(list-counter) '.';
+  position: absolute;
+  left: -1.5rem;
+  font-weight: 600;
+  color: #BA1E4D;
+}
+
+.markdown-content code {
+  @apply bg-light-border dark:bg-dark-border px-2 py-1 rounded text-sm;
+}
+
+.markdown-content pre {
+  @apply bg-light-border dark:bg-dark-border p-4 rounded-lg mb-4 overflow-x-auto;
+}
+
+.markdown-content pre code {
+  @apply bg-transparent p-0;
+}
+
+.markdown-content blockquote {
+  @apply border-l-4 border-primary pl-4 italic my-4;
+}
+
+.markdown-content a {
+  @apply text-primary hover:underline;
+}
+
+.markdown-content img {
+  @apply max-w-full rounded-lg my-4;
+}
+

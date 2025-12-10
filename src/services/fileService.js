@@ -1,4 +1,4 @@
-import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { storage } from './firebase';
 import { auth } from './firebase';
 
@@ -69,7 +69,7 @@ export const fileService = {
     }
   },
 
-  uploadVideo: async (file) => {
+  uploadVideo: async (file, onProgress) => {
     try {
       // Verify user is authenticated
       const currentUser = auth.currentUser;
@@ -82,22 +82,44 @@ export const fileService = {
       const fileName = `${STORAGE_BASE_PATH}videos/${timestamp}_${file.name}`;
       const storageRef = ref(storage, fileName);
       
-      // Upload the file
-      await uploadBytes(storageRef, file);
+      // Use uploadBytesResumable for progress tracking
+      const uploadTask = uploadBytesResumable(storageRef, file);
       
-      // Get the download URL
-      const downloadURL = await getDownloadURL(storageRef);
-      
-      return downloadURL;
+      // Return a promise that resolves with the download URL
+      return new Promise((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            // Calculate upload progress percentage
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            if (onProgress) {
+              onProgress(progress);
+            }
+          },
+          (error) => {
+            console.error('Error uploading video:', error);
+            
+            // Provide more helpful error messages
+            if (error.message.includes('unauthorized') || error.message.includes('permission')) {
+              reject(new Error('Permission denied. Please make sure:\n1. You are logged in\n2. Firebase Storage rules are published\n3. The rules allow authenticated users to upload'));
+            } else {
+              reject(new Error('Failed to upload video: ' + error.message));
+            }
+          },
+          async () => {
+            // Upload completed successfully, get the download URL
+            try {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(downloadURL);
+            } catch (error) {
+              reject(new Error('Failed to get download URL: ' + error.message));
+            }
+          }
+        );
+      });
     } catch (error) {
       console.error('Error uploading video:', error);
-      
-      // Provide more helpful error messages
-      if (error.message.includes('unauthorized') || error.message.includes('permission')) {
-        throw new Error('Permission denied. Please make sure:\n1. You are logged in\n2. Firebase Storage rules are published\n3. The rules allow authenticated users to upload');
-      }
-      
-      throw new Error('Failed to upload video: ' + error.message);
+      throw error;
     }
   },
 

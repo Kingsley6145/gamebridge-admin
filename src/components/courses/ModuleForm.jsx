@@ -8,7 +8,7 @@ import { validateModule } from '../../utils/validation';
 import { iconColors } from '../../utils/colors';
 import { generateId } from '../../utils/formatters';
 
-export const ModuleForm = ({ module, onSubmit, onCancel, loading = false }) => {
+export const ModuleForm = ({ module, onSubmit, onCancel, loading = false, uploadProgress = 0 }) => {
   const [formData, setFormData] = useState({
     title: '',
     duration: '',
@@ -127,6 +127,26 @@ export const ModuleForm = ({ module, onSubmit, onCancel, loading = false }) => {
         error={errors.videoUrl}
         required
       />
+
+      {/* Upload Progress Bar */}
+      {loading && uploadProgress > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-light-text dark:text-dark-text font-medium">
+              Uploading video...
+            </span>
+            <span className="text-light-textSecondary dark:text-dark-textSecondary">
+              {Math.round(uploadProgress)}%
+            </span>
+          </div>
+          <div className="w-full bg-light-bg dark:bg-dark-bg rounded-full h-2.5 overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all duration-300 ease-out rounded-full"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       <MarkdownEditor
         label="Description"

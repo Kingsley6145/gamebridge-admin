@@ -33,6 +33,7 @@ export const CourseForm = ({ course, onSubmit, onCancel }) => {
   const [editingModule, setEditingModule] = useState(null);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [uploadingModule, setUploadingModule] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     if (course) {
@@ -89,11 +90,14 @@ export const CourseForm = ({ course, onSubmit, onCancel }) => {
     
     try {
       setUploadingModule(true);
+      setUploadProgress(0);
       let videoUrl = moduleData.videoUrl;
       
       // Upload video if a new file is provided
       if (videoFile) {
-        videoUrl = await fileService.uploadVideo(videoFile);
+        videoUrl = await fileService.uploadVideo(videoFile, (progress) => {
+          setUploadProgress(progress);
+        });
       } else if (editingModule) {
         // When editing, preserve existing videoUrl if no new file is selected
         // Check if moduleData.videoUrl is a valid URL (starts with http/https)
@@ -124,12 +128,14 @@ export const CourseForm = ({ course, onSubmit, onCancel }) => {
       
       setModuleModalOpen(false);
       setEditingModule(null);
+      setUploadProgress(0);
     } catch (error) {
       console.error('Failed to upload video:', error);
       toast.error(error.message || 'Failed to save module. Please try again.');
       // Don't close the modal on error so user can fix the issue
     } finally {
       setUploadingModule(false);
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
@@ -324,6 +330,7 @@ export const CourseForm = ({ course, onSubmit, onCancel }) => {
             }
           }}
           loading={uploadingModule}
+          uploadProgress={uploadProgress}
         />
       </Modal>
 

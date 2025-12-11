@@ -15,9 +15,11 @@ export const ModuleForm = ({ module, onSubmit, onCancel, loading = false, upload
     iconColor: '',
     videoUrl: '',
     markdownDescription: '',
+    htmlContent: '',
   });
   const [errors, setErrors] = useState({});
   const [videoFile, setVideoFile] = useState(null);
+  const [htmlFile, setHtmlFile] = useState(null);
 
   useEffect(() => {
     if (module) {
@@ -27,8 +29,10 @@ export const ModuleForm = ({ module, onSubmit, onCancel, loading = false, upload
         iconColor: module.iconColor || '',
         videoUrl: module.videoUrl || '',
         markdownDescription: module.markdownDescription || '',
+        htmlContent: module.htmlContent || '',
       });
       setVideoFile(null); // Reset video file when editing existing module
+      setHtmlFile(null); // Reset HTML file when editing existing module
     } else {
       // Reset form when adding new module
       setFormData({
@@ -37,8 +41,10 @@ export const ModuleForm = ({ module, onSubmit, onCancel, loading = false, upload
         iconColor: '',
         videoUrl: '',
         markdownDescription: '',
+        htmlContent: '',
       });
       setVideoFile(null);
+      setHtmlFile(null);
     }
   }, [module]);
 
@@ -61,6 +67,19 @@ export const ModuleForm = ({ module, onSubmit, onCancel, loading = false, upload
       }
     }
     // Don't update videoUrl when a new file is selected - it will be set after upload in handleModuleSubmit
+  };
+
+  const handleHtmlSelect = (file) => {
+    setHtmlFile(file);
+    // If file is cleared (user clicked remove), clear the htmlContent
+    if (!file) {
+      handleChange('htmlContent', '');
+    } else {
+      // Clear htmlContent error when a new file is selected
+      if (errors.htmlContent) {
+        setErrors(prev => ({ ...prev, htmlContent: null }));
+      }
+    }
   };
 
   const handleSubmit = (e) => {
@@ -87,7 +106,7 @@ export const ModuleForm = ({ module, onSubmit, onCancel, loading = false, upload
       id: module?.id || generateId(),
     };
 
-    onSubmit(moduleData, videoFile);
+    onSubmit(moduleData, videoFile, htmlFile);
   };
 
   return (
@@ -155,6 +174,14 @@ export const ModuleForm = ({ module, onSubmit, onCancel, loading = false, upload
         placeholder="Write the module description in markdown..."
         error={errors.markdownDescription}
         required
+      />
+
+      <FileUpload
+        type="html"
+        label="Upload HTML File"
+        onFileSelect={handleHtmlSelect}
+        currentFile={formData.htmlContent ? (htmlFile ? htmlFile.name : 'HTML content saved') : ''}
+        error={errors.htmlContent}
       />
 
       <div className="flex items-center justify-end gap-4 pt-4 border-t border-light-border dark:border-dark-border">

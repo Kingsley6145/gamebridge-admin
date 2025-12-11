@@ -85,13 +85,28 @@ export const CourseForm = ({ course, onSubmit, onCancel }) => {
     }));
   };
 
-  const handleModuleSubmit = async (moduleData, videoFile) => {
+  // Helper function to read HTML file content
+  const readHtmlFile = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        resolve(e.target.result);
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      reader.readAsText(file);
+    });
+  };
+
+  const handleModuleSubmit = async (moduleData, videoFile, htmlFile) => {
     if (uploadingModule) return; // Prevent double submission
     
     try {
       setUploadingModule(true);
       setUploadProgress(0);
       let videoUrl = moduleData.videoUrl;
+      let htmlContent = moduleData.htmlContent || '';
       
       // Upload video if a new file is provided
       if (videoFile) {
@@ -107,9 +122,27 @@ export const CourseForm = ({ course, onSubmit, onCancel }) => {
         }
       }
 
+      // Read HTML file content if a new file is provided
+      if (htmlFile) {
+        try {
+          htmlContent = await readHtmlFile(htmlFile);
+        } catch (error) {
+          console.error('Failed to read HTML file:', error);
+          toast.error('Failed to read HTML file. Please try again.');
+          setUploadingModule(false);
+          return;
+        }
+      } else if (editingModule) {
+        // When editing, preserve existing htmlContent if no new file is selected
+        if (!htmlContent) {
+          htmlContent = editingModule.htmlContent || '';
+        }
+      }
+
       const finalModuleData = {
         ...moduleData,
         videoUrl,
+        htmlContent,
       };
 
       if (editingModule) {

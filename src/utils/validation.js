@@ -96,15 +96,28 @@ export const validateQuestion = (question) => {
 
 export const validateFile = (file, type) => {
   const errors = {};
-  const limits = type === 'image' ? FILE_LIMITS.image : FILE_LIMITS.video;
+  const limits = type === 'image' 
+    ? FILE_LIMITS.image 
+    : type === 'video' 
+    ? FILE_LIMITS.video 
+    : type === 'html'
+    ? FILE_LIMITS.html
+    : FILE_LIMITS.image; // Default to image
 
   if (!file) {
     errors.file = 'File is required';
     return errors;
   }
 
-  // File type validation
-  if (!limits.types.includes(file.type)) {
+  // File type validation - for HTML, also check file extension
+  if (type === 'html') {
+    const isHtmlFile = limits.types.includes(file.type) || 
+                      file.name.toLowerCase().endsWith('.html') ||
+                      file.name.toLowerCase().endsWith('.htm');
+    if (!isHtmlFile) {
+      errors.file = 'File must be an HTML file (.html or .htm)';
+    }
+  } else if (!limits.types.includes(file.type)) {
     errors.file = `File must be one of: ${limits.types.join(', ')}`;
   }
 

@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, X, FileVideo, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, FileVideo, Image as ImageIcon, FileCode } from 'lucide-react';
 import { validateFile } from '../../utils/validation';
 import { FILE_LIMITS } from '../../utils/constants';
 import { formatFileSize } from '../../utils/formatters';
@@ -23,15 +23,24 @@ export const FileUpload = ({
   const [imageError, setImageError] = useState(false);
   const [loadingImage, setLoadingImage] = useState(false);
 
-  const fileLimits = type === 'image' ? FILE_LIMITS.image : FILE_LIMITS.video;
+  const fileLimits = type === 'image' 
+    ? FILE_LIMITS.image 
+    : type === 'video' 
+    ? FILE_LIMITS.video 
+    : type === 'html'
+    ? FILE_LIMITS.html
+    : FILE_LIMITS.image;
   const maxFileSize = maxSize || fileLimits.maxSize / (1024 * 1024);
   
   // Convert MIME types array to react-dropzone v14+ format (object)
   // react-dropzone expects: { 'image/png': [], 'image/jpeg': [] }
-  const acceptedTypes = accept || fileLimits.types.reduce((acc, mimeType) => {
-    acc[mimeType] = [];
-    return acc;
-  }, {});
+  // For HTML files, also accept .html and .htm extensions
+  const acceptedTypes = accept || (type === 'html' 
+    ? { 'text/html': ['.html', '.htm'], 'text/plain': ['.html', '.htm'] }
+    : fileLimits.types.reduce((acc, mimeType) => {
+        acc[mimeType] = [];
+        return acc;
+      }, {}));
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     setUploadError('');
@@ -41,7 +50,12 @@ export const FileUpload = ({
       if (rejection.errors[0].code === 'file-too-large') {
         setUploadError(`File size must be less than ${maxFileSize}MB`);
       } else if (rejection.errors[0].code === 'file-invalid-type') {
-        setUploadError(`File must be ${type === 'image' ? 'PNG or JPG' : 'MP4'}`);
+        const typeMessages = {
+          image: 'PNG or JPG',
+          video: 'MP4',
+          html: 'HTML (.html or .htm)'
+        };
+        setUploadError(`File must be ${typeMessages[type] || 'a valid file'}`);
       } else {
         setUploadError('Invalid file. Please try again.');
       }
@@ -63,6 +77,9 @@ export const FileUpload = ({
         setPreview(reader.result);
       };
       reader.readAsDataURL(file);
+    } else if (type === 'html') {
+      // For HTML files, store the file object itself for preview
+      setPreview(file);
     } else {
       const url = URL.createObjectURL(file);
       setPreview(url);
@@ -93,7 +110,8 @@ export const FileUpload = ({
   // Determine the image source to display
   const imageSource = preview || resolvedImageUrl;
   // Show image section if we have a preview (new file) or currentFile exists (editing mode)
-  const hasImage = preview || currentFile;
+  // For HTML files, preview is the file object itself
+  const hasImage = (type === 'html' ? preview : preview || resolvedImageUrl) || currentFile;
   
   // Try to resolve image/video URL when currentFile changes
   useEffect(() => {
@@ -192,6 +210,31 @@ export const FileUpload = ({
                 <X className="w-4 h-4" />
               </button>
             </div>
+          ) : type === 'html' ? (
+            <div className="relative w-full rounded-lg overflow-hidden border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg">
+              <div className="w-full p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <FileCode className="w-10 h-10 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium text-light-text dark:text-dark-text mb-1">
+                      {preview ? preview.name : currentFile || 'HTML File'}
+                    </p>
+                    {preview && (
+                      <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
+                        {formatFileSize(preview.size)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  className="p-2 bg-red text-white rounded-full hover:bg-[#c2185b] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="relative w-full rounded-lg overflow-hidden border border-light-border dark:border-dark-border">
               {(imageSource || currentFile) ? (
@@ -242,20 +285,22 @@ export const FileUpload = ({
           <input {...getInputProps()} />
           {type === 'image' ? (
             <ImageIcon className="w-12 h-12 mx-auto mb-4 text-light-textSecondary dark:text-dark-textSecondary" />
-          ) : (
+          ) : type === 'video' ? (
             <FileVideo className="w-12 h-12 mx-auto mb-4 text-light-textSecondary dark:text-dark-textSecondary" />
+          ) : (
+            <FileCode className="w-12 h-12 mx-auto mb-4 text-light-textSecondary dark:text-dark-textSecondary" />
           )}
           <p className="text-sm text-light-text dark:text-dark-text mb-2">
             {isDragActive ? (
               'Drop the file here...'
             ) : (
               <>
-                Drag & drop {type === 'image' ? 'an image' : 'a video'} here, or click to select
+                Drag & drop {type === 'image' ? 'an image' : type === 'video' ? 'a video' : 'an HTML file'} here, or click to select
               </>
             )}
           </p>
           <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
-            {type === 'image' ? 'PNG, JPG' : 'MP4'} up to {maxFileSize}MB
+            {type === 'image' ? 'PNG, JPG' : type === 'video' ? 'MP4' : 'HTML'} up to {maxFileSize}MB
           </p>
         </div>
       )}

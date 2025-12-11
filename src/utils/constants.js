@@ -14,6 +14,10 @@ export const FILE_LIMITS = {
   video: {
     maxSize: 100 * 1024 * 1024, // 100MB
     types: ['video/mp4']
+  },
+  html: {
+    maxSize: 10 * 1024 * 1024, // 10MB
+    types: ['text/html', 'text/plain'] // Accept HTML files
   }
 };
 

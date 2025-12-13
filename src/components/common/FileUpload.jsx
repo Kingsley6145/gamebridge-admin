@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, FileVideo, Image as ImageIcon, FileCode } from 'lucide-react';
-import { validateFile } from '../../utils/validation';
+import { validateFile, validateImageDimensions } from '../../utils/validation';
 import { FILE_LIMITS } from '../../utils/constants';
 import { formatFileSize } from '../../utils/formatters';
 import { getImageURLFromPath } from '../../services/fileService';
@@ -42,7 +42,7 @@ export const FileUpload = ({
         return acc;
       }, {}));
 
-  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+  const onDrop = useCallback(async (acceptedFiles, rejectedFiles) => {
     setUploadError('');
     
     if (rejectedFiles.length > 0) {
@@ -68,6 +68,15 @@ export const FileUpload = ({
     if (Object.keys(validation).length > 0) {
       setUploadError(validation.file);
       return;
+    }
+
+    // Validate image dimensions for image files
+    if (type === 'image') {
+      const dimensionValidation = await validateImageDimensions(file);
+      if (Object.keys(dimensionValidation).length > 0) {
+        setUploadError(dimensionValidation.file);
+        return;
+      }
     }
 
     // Create preview
@@ -300,7 +309,12 @@ export const FileUpload = ({
             )}
           </p>
           <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
-            {type === 'image' ? 'PNG, JPG' : type === 'video' ? 'MP4' : 'HTML'} up to {maxFileSize}MB
+            {type === 'image' 
+              ? `PNG, JPG up to ${maxFileSize}MB. Dimensions must be exactly ${FILE_LIMITS.image.dimensions.width}px × ${FILE_LIMITS.image.dimensions.height}px`
+              : type === 'video' 
+              ? `MP4 up to ${maxFileSize}MB`
+              : `HTML up to ${maxFileSize}MB`
+            }
           </p>
         </div>
       )}

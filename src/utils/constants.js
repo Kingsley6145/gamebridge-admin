@@ -9,7 +9,11 @@ export const CATEGORIES = [
 export const FILE_LIMITS = {
   image: {
     maxSize: 5 * 1024 * 1024, // 5MB
-    types: ['image/png', 'image/jpeg', 'image/jpg']
+    types: ['image/png', 'image/jpeg', 'image/jpg'],
+    dimensions: {
+      width: 408, // Exact width required
+      height: 612 // Exact height required
+    }
   },
   video: {
     maxSize: 100 * 1024 * 1024, // 100MB

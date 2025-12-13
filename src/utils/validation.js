@@ -94,6 +94,50 @@ export const validateQuestion = (question) => {
   return errors;
 };
 
+// Validate image dimensions (async - loads image to check dimensions)
+export const validateImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    if (!file || !file.type.startsWith('image/')) {
+      resolve({ file: 'File must be an image' });
+      return;
+    }
+
+    const limits = FILE_LIMITS.image;
+    if (!limits.dimensions) {
+      resolve({}); // No dimension requirements
+      return;
+    }
+
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.onload = () => {
+        const { width, height } = limits.dimensions;
+        const errors = {};
+
+        if (img.naturalWidth !== width || img.naturalHeight !== height) {
+          errors.file = `Image dimensions must be exactly ${width}px × ${height}px. Current size: ${img.naturalWidth}px × ${img.naturalHeight}px`;
+        }
+
+        resolve(errors);
+      };
+
+      img.onerror = () => {
+        resolve({ file: 'Failed to load image for dimension validation' });
+      };
+
+      img.src = e.target.result;
+    };
+
+    reader.onerror = () => {
+      resolve({ file: 'Failed to read image file' });
+    };
+
+    reader.readAsDataURL(file);
+  });
+};
+
 export const validateFile = (file, type) => {
   const errors = {};
   const limits = type === 'image' 
